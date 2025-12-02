@@ -1,0 +1,10 @@
+[submodule "apps/backend"]
+	path = apps/backend
+	url = https://github.com/ross2p/ems-api.git
+	branch = main
+
+[submodule "apps/frontend"]
+	path = apps/frontend
+	url = https://github.com/ross2p/ems-app.git
+	branch = main
+
