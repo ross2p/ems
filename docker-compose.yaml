@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:17
     hostname: pg_db
     ports:
       - "${DATABASE_PORT:-5432}:5432"
@@ -10,6 +10,7 @@ services:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
     env_file:
       - ./.env
     volumes:
@@ -23,36 +24,70 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
-    hostname: backend
+  redis:
+    image: redis:7-alpine
+    hostname: redis
     ports:
-      - "${BACKEND_PORT:-4000}:4000"
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder  # <--- КЛЮЧОВИЙ МОМЕНТ: ми беремо стадію builder, де є Prisma CLI
+    command: npx prisma migrate deploy
     env_file:
       - ./.env
     environment:
-      DATABASE_HOST: pg_db
-      DATABASE_PORT: 5432
       DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@pg_db:5432/${DATABASE_NAME}?schema=public
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app-network
-    command: sh -c "npm run db:migrate:deploy && npm run start:prod"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    hostname: backend
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_HOST: pg_db
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@pg_db:5432/${DATABASE_NAME}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: npm run start:prod
     restart: unless-stopped
 
   frontend:
     build:
-      context: ./apps/frontend
+      context: ./frontend
       dockerfile: Dockerfile
     hostname: frontend
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     env_file:
-      - ./.env
+      - ./frontend/.env
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     depends_on:
@@ -67,3 +102,4 @@ networks:
 
 volumes:
   pg_data:
+  redis_data:
