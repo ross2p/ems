@@ -42,7 +42,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: builder  # <--- КЛЮЧОВИЙ МОМЕНТ: ми беремо стадію builder, де є Prisma CLI
+      target: builder
     command: npx prisma migrate deploy
     env_file:
       - ./.env
