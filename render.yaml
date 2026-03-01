@@ -2,11 +2,11 @@ services:
   - type: web
     name: ems-backend
     runtime: docker
+    autoDeployTrigger: off
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
     region: frankfurt
-    healthCheckPath: /api/v1
     envVars:
       - key: NODE_ENV
         value: production
@@ -42,6 +42,7 @@ services:
   - type: web
     name: ems-frontend
     runtime: docker
+    autoDeployTrigger: off
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     plan: free

@@ -357,6 +357,19 @@ npm run build
 npm run start
 ```
 
+### Render CD (Continuous Deployment)
+
+CI/CD workflows run tests and deploy to Render when you push to `main`:
+
+- **Backend** (`backend/.github/workflows/ci-cd.yml`) — lint, build, test, then deploy
+- **Frontend** (`frontend/.github/workflows/ci-cd.yml`) — lint, build, then deploy
+
+To enable deploy in each repo:
+
+1. **Get Deploy Hook URL** from [Render Dashboard](https://dashboard.render.com/) → service → Settings → Deploy Hook
+2. **Add GitHub Secret** in repo Settings → Secrets and variables → Actions:
+   - `RENDER_DEPLOY_HOOK` — deploy hook URL for the service
+
 ### Environment Variables for Production
 
 Ensure all environment variables are properly set:
